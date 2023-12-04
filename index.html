@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Timer</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+    
+    h1 {
+      margin-top: 50px;
+    }
+    
+    #timer {
+      font-size: 48px;
+      margin-top: 20px;
+    }
+    
+    #controls {
+      margin-top: 50px;
+    }
+    
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+    }
+    
+    #settings {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Timer</h1>
+  <div>
+    <label for="hours">Hours:</label>
+    <input type="number" id="hours" min="1" max="12">
+    <label for="minutes">Minutes:</label>
+    <input type="number" id="minutes" min="0" max="59">
+    <label for="ampm">AM/PM:</label>
+    <select id="ampm">
+      <option value="am">AM</option>
+      <option value="pm">PM</option>
+    </select>
+  </div>
+  <div id="timer">00:00:00</div>
+  <div id="controls">
+    <button onclick="startTimer()">Start</button>
+    <button onclick="stopTimer()">Stop</button>
+    <button onclick="resetTimer()">Reset</button>
+  </div>
+  <div id="settings">
+    <label for="mute">Mute sound:</label>
+    <input type="checkbox" id="mute" onchange="toggleMute()">
+    <br>
+    <label for="volume">Volume:</label>
+    <input type="range" id="volume" min="0" max="100" value="50" oninput="changeVolume(event)">
+    <span id="volumeDisplay">50%</span>
+  </div>
+
+  <script>
+    var timerInterval;
+    var targetTime;
+    var audio = new Audio('/Alert.mp3');
+    audio.loop = true;
+    var volumeSlider = document.getElementById("volume");
+    var volumeDisplay = document.getElementById("volumeDisplay");
+    var muteCheckbox = document.getElementById("mute");
+    
+    function startTimer() {
+      var hoursInput = document.getElementById("hours");
+      var minutesInput = document.getElementById("minutes");
+      var ampmInput = document.getElementById("ampm");
+      
+      var currentHours = new Date().getHours();
+      var currentMinutes = new Date().getMinutes();
+      var currentSeconds = new Date().getSeconds();
+      
+      var targetHours = parseInt(hoursInput.value);
+      var targetMinutes = parseInt(minutesInput.value);
+      
+      // Adjust target hours based on AM/PM selection
+      if (ampmInput.value === "pm" && targetHours !== 12) {
+        targetHours += 12;
+      } else if (ampmInput.value === "am" && targetHours === 12) {
+        targetHours = 0;
+      }
+      
+      // Set target time based on user input
+      targetTime = new Date();
+      targetTime.setHours(targetHours, targetMinutes, 0, 0);
+      
+      // Add 1 day if target time is before current time
+      if (targetTime <= new Date()) {
+        targetTime.setDate(targetTime.getDate() + 1);
+      }
+      
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+    
+    function updateTimer() {
+      var currentTime = new Date();
+      var timeDifference = targetTime.getTime() - currentTime.getTime();
+      
+      if (timeDifference <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById("timer").textContent = "Time's up!";
+        playSound();
+        return;
+      }
+      
+      var hours = Math.floor(timeDifference / (1000 * 60 * 60));
+      var minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+      
+      var timerElement = document.getElementById("timer");
+      timerElement.textContent = formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
+    }
+    
+    function stopTimer() {
+      clearInterval(timerInterval);
+      stopSound();
+    }
+    
+    function resetTimer() {
+      clearInterval(timerInterval);
+      document.getElementById("timer").textContent = "00:00:00";
+      stopSound();
+    }
+    
+    function playSound() {
+      if (!muteCheckbox.checked) {
+        audio.volume = volumeSlider.value / 100;
+        audio.play();
+      }
+    }
+    function stopSound() {
+  audio.pause();
+  audio.currentTime = 0;
+}
+     function toggleMute() {
+      if (muteCheckbox.checked) {
+        audio.pause();
+      } else {
+        audio.play();
+      }
+    }
+    
+    function changeVolume(event) {
+      var volume = event.target.value;
+      audio.volume = volume / 100;
+      volumeDisplay.textContent = volume + "%";
+    }
+    
+    function formatTime(time) {
+      return time.toString().padStart(2, '0');
+    }
+  </script>
+</body>
+</html>

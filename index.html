@@ -29,15 +29,33 @@
     #settings {
       margin-top: 20px;
     }
+    
+    .days-input,
+    .hours-input,
+    .mins-input,
+    .seconds-input {
+      width: 50px;
+      height: 32px;
+      font-size: 16px;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
+    <input type="file" id="fileInput" accept=".mp3" style="display: none;">
+  <button onclick="openFileExplorer()">Select Sound</button>
   <h1>Timer</h1>
   <div>
+    <label for="days">Days:</label>
+    <input type="number" id="days" class="days-input" min="0">
     <label for="hours">Hours:</label>
-    <input type="number" id="hours" min="1" max="12">
+    <input type="number" id="hours" class="hours-input" min="1" max="12">
     <label for="minutes">Minutes:</label>
-    <input type="number" id="minutes" min="0" max="59">
+    <input type="number" id="minutes" class="mins-input" min="0" max="59">
+    <label for="seconds">Seconds:</label>
+    <input type="number" id="seconds" class="seconds-input" min="0" max="59">
     <label for="ampm">AM/PM:</label>
     <select id="ampm">
       <option value="am">AM</option>
@@ -99,51 +117,55 @@
       timerInterval = setInterval(updateTimer, 1000);
     }
     
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+    
+    function resetTimer() {
+      clearInterval(timerInterval);
+      document.getElementById("timer").textContent = "00:00:00";
+    }
+    
     function updateTimer() {
       var currentTime = new Date();
       var timeDifference = targetTime.getTime() - currentTime.getTime();
-      
+    
       if (timeDifference <= 0) {
         clearInterval(timerInterval);
         document.getElementById("timer").textContent = "Time's up!";
         playSound();
         return;
       }
-      
-      var hours = Math.floor(timeDifference / (1000 * 60 * 60));
+    
+      var days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      var hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       var minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
       var seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
-      
-      var timerElement = document.getElementById("timer");
-      timerElement.textContent = formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
-    }
     
-    function stopTimer() {
-      clearInterval(timerInterval);
-      stopSound();
-    }
+      // Add leading zeros if necessary
+      hours = hours.toString().padStart(2, '0');
+      minutes = minutes.toString().padStart(2, '0');
+      seconds = seconds.toString().padStart(2, '0');
     
-    function resetTimer() {
-      clearInterval(timerInterval);
-      document.getElementById("timer").textContent = "00:00:00";
-      stopSound();
+      // Display the timer
+      document.getElementById("timer").textContent = hours + ":" + minutes + ":" + seconds;
     }
     
     function playSound() {
       if (!muteCheckbox.checked) {
-        audio.volume = volumeSlider.value / 100;
         audio.play();
       }
     }
-    function stopSound() {
-  audio.pause();
-  audio.currentTime = 0;
-}
-     function toggleMute() {
+    
+   function toggleMute() {
+           var timerText = document.getElementById("timer").textContent;
       if (muteCheckbox.checked) {
         audio.pause();
       } else {
-        audio.play();
+        if (timerText === "00:00:00") {
+          audio.play();
+        }
+      return;
       }
     }
     
@@ -152,10 +174,17 @@
       audio.volume = volume / 100;
       volumeDisplay.textContent = volume + "%";
     }
-    
-    function formatTime(time) {
-      return time.toString().padStart(2, '0');
-    }
   </script>
+  <script>    
+  function openFileExplorer() {
+      document.getElementById("fileInput").click();
+    }
+    
+    document.getElementById("fileInput").addEventListener("change", function(event) {
+      var file = event.target.files[0];
+      var url = URL.createObjectURL(file);
+      audio.src = url;
+    });
+    </script>
 </body>
 </html>
